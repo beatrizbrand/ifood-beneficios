@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iFood Benefícios — Gestão de Envios</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#E53935;--red2:#B71C1C;--red-soft:#FFF5F5;--red-mid:#FFEBEE;
+  --cream:#FAF8F5;--white:#FFFFFF;--ink:#1A1412;--ink2:#5C4F4A;--ink3:#9C8E89;
+  --border:#E8E0DC;--border2:#D4C9C4;
+  --success:#2E7D32;--success-bg:#F1F8F1;
+  --warn:#E65100;--warn-bg:#FFF3E0;
+  --radius:12px;--radius-sm:8px;--radius-lg:20px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.10);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.6}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex}
+
+/* ── BRAND LOGIN ── */
+#screen-brand-login{flex-direction:column;align-items:center;justify-content:center;background:var(--ink);position:relative;overflow:hidden}
+#screen-brand-login::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(229,57,53,.18) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(229,57,53,.08) 0%,transparent 50%)}
+.brand-login-card{position:relative;z-index:2;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;backdrop-filter:blur(12px)}
+.brand-login-card .logo{text-align:center;margin-bottom:40px}
+.brand-login-card .logo h1{font-family:'Fraunces',serif;font-size:28px;font-weight:400;color:#fff;letter-spacing:-.5px}
+.brand-login-card .logo p{font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.5px;text-transform:uppercase}
+.brand-login-card label{display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;margin-top:20px}
+.brand-login-card input{width:100%;padding:12px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;transition:border .2s}
+.brand-login-card input::placeholder{color:rgba(255,255,255,.25)}
+.brand-login-card input:focus{outline:none;border-color:var(--red);background:rgba(255,255,255,.10)}
+.brand-login-card .login-btn{width:100%;margin-top:28px;padding:13px;background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;letter-spacing:.3px;transition:background .2s}
+.brand-login-card .login-btn:hover{background:var(--red2)}
+.brand-login-error{margin-top:12px;padding:10px 14px;background:rgba(229,57,53,.15);border:1px solid rgba(229,57,53,.3);border-radius:var(--radius-sm);font-size:13px;color:#FF8A80;display:none}
+.switch-link{position:relative;z-index:2;margin-top:24px;font-size:13px;color:rgba(255,255,255,.35);text-align:center}
+.switch-link a{color:rgba(255,255,255,.6);cursor:pointer;text-decoration:underline}
+
+/* ── BRAND DASHBOARD ── */
+#screen-brand{flex-direction:column;background:var(--cream)}
+.brand-header{background:var(--white);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:10}
+.brand-header-left{display:flex;align-items:center;gap:16px}
+.brand-logo{font-family:'Fraunces',serif;font-size:20px;font-weight:400;color:var(--ink)}
+.brand-logo span{color:var(--red)}
+.brand-nav{display:flex;gap:4px}
+.brand-nav button{padding:6px 14px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink2);cursor:pointer;border-radius:var(--radius-sm);transition:background .15s}
+.brand-nav button:hover{background:var(--red-soft)}
+.brand-nav button.active{background:var(--red-mid);color:var(--red);font-weight:500}
+.brand-header-right{display:flex;align-items:center;gap:12px}
+.logout-btn{padding:6px 14px;border:1px solid var(--border2);background:var(--white);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink2);cursor:pointer}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+.brand-body{flex:1;padding:32px}
+.brand-section{display:none}
+.brand-section.active{display:block}
+
+/* stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;transition:box-shadow .2s}
+.stat-card:hover{box-shadow:var(--shadow)}
+.stat-card .num{font-family:'Fraunces',serif;font-size:36px;font-weight:300;line-height:1;margin-bottom:4px}
+.stat-card .lbl{font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.7px}
+.stat-card.accent .num{color:var(--red)}
+.stat-card.green .num{color:var(--success)}
+.stat-card.amber .num{color:var(--warn)}
+
+/* table section */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.section-title{font-family:'Fraunces',serif;font-size:22px;font-weight:400}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;height:36px}
+.search-box svg{opacity:.35;flex-shrink:0}
+.search-box input{border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);width:200px}
+.ctrl-select{height:36px;padding:0 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--white);cursor:pointer}
+.ctrl-btn{height:36px;padding:0 16px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink2);background:var(--white);cursor:pointer;display:flex;align-items:center;gap:6px}
+.ctrl-btn:hover{border-color:var(--red);color:var(--red)}
+.ctrl-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.ctrl-btn.primary:hover{background:var(--red2);color:#fff}
+
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--cream)}
+td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF9}
+.cell-name{font-weight:500;color:var(--ink)}
+.cell-user{color:var(--red);font-size:12px}
+.cell-city{color:var(--ink2)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-sent{background:var(--success-bg);color:var(--success)}
+.badge-pending{background:var(--warn-bg);color:var(--warn)}
+.badge-nocode{background:var(--red-mid);color:var(--red)}
+.dot-badge{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+.track-inline{display:flex;align-items:center;gap:6px}
+.track-input{width:150px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);background:var(--white);transition:border .15s}
+.track-input:focus{outline:none;border-color:var(--red)}
+.track-input.has-value{border-color:var(--success);color:var(--success);font-weight:500}
+.ok-btn{width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.ok-btn:hover{background:var(--success);border-color:var(--success);color:#fff}
+.sent-check{width:16px;height:16px;cursor:pointer;accent-color:var(--red)}
+.status-select{padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--white);cursor:pointer;width:100%;max-width:200px}
+.empty-row{text-align:center;padding:40px;color:var(--ink3)}
+
+/* expandable address row */
+.row-main td{cursor:pointer}
+.row-main:hover td{background:#F7F4F2}
+.row-expand{display:none;background:#FAFAF8}
+.row-expand.open{display:table-row}
+.expand-inner{padding:16px 16px 20px 28px}
+.expand-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 20px}
+.expand-field{display:flex;flex-direction:column;gap:2px}
+.expand-field .ef-label{font-size:10px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px}
+.expand-field .ef-value{font-size:13px;color:var(--ink)}
+.expand-chevron{display:inline-block;transition:transform .2s;font-size:11px;color:var(--ink3);margin-left:6px}
+.row-main.expanded .expand-chevron{transform:rotate(180deg)}
+.expand-title{font-size:11px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+
+/* form section */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:800px}
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:28px}
+.form-card h3{font-family:'Fraunces',serif;font-size:18px;font-weight:400;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--ink2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.field input,.field select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--white);transition:border .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(229,57,53,.08)}
+.field input::placeholder{color:var(--ink3)}
+.field-hint{font-size:11px;color:var(--ink3);margin-top:4px}
+.submit-btn{width:100%;margin-top:20px;padding:13px;background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s}
+.submit-btn:hover{background:var(--red2)}
+.form-success{display:none;margin-top:12px;padding:14px 16px;background:var(--success-bg);border:1px solid #A5D6A7;border-radius:var(--radius-sm);font-size:14px;color:var(--success)}
+
+/* ── CREATOR PORTAL ── */
+#screen-creator{flex-direction:column;background:var(--ink);min-height:100vh;position:relative;overflow:hidden}
+#screen-creator::before{content:'';position:absolute;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(229,57,53,.12) 0%,transparent 70%);pointer-events:none}
+#screen-creator::after{content:'';position:absolute;bottom:-150px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(229,57,53,.08) 0%,transparent 70%);pointer-events:none}
+.creator-inner{position:relative;z-index:2;max-width:500px;margin:0 auto;padding:60px 24px}
+.creator-logo{text-align:center;margin-bottom:48px}
+.creator-logo .icon{width:56px;height:56px;background:var(--red);border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.creator-logo h1{font-family:'Fraunces',serif;font-size:32px;font-weight:300;color:#fff;letter-spacing:-.5px;line-height:1.2}
+.creator-logo p{font-size:14px;color:rgba(255,255,255,.4);margin-top:8px}
+
+.creator-tabs{display:flex;gap:4px;background:rgba(255,255,255,.06);border-radius:var(--radius-sm);padding:4px;margin-bottom:32px}
+.creator-tab{flex:1;padding:9px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,.45);cursor:pointer;border-radius:var(--radius-sm);transition:all .2s;font-weight:500}
+.creator-tab.active{background:var(--white);color:var(--ink)}
+
+.creator-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:var(--radius);padding:28px;backdrop-filter:blur(12px);display:none}
+.creator-card.active{display:block}
+.creator-card .field label{color:rgba(255,255,255,.45)}
+.creator-card .field input{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);color:#fff}
+.creator-card .field input::placeholder{color:rgba(255,255,255,.2)}
+.creator-card .field input:focus{border-color:var(--red);background:rgba(255,255,255,.10);box-shadow:0 0 0 3px rgba(229,57,53,.15)}
+.creator-card .field-hint{color:rgba(255,255,255,.25)}
+.creator-card .submit-btn{background:var(--red)}
+
+.lookup-btn{width:100%;margin-top:20px;padding:13px;background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s}
+.lookup-btn:hover{background:var(--red2)}
+
+.result-box{display:none;margin-top:20px;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.result-status{display:flex;align-items:center;gap:10px;padding:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);margin-bottom:16px}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-dot.green{background:#4CAF50;box-shadow:0 0 8px rgba(76,175,80,.5)}
+.status-dot.amber{background:#FF9800;box-shadow:0 0 8px rgba(255,152,0,.5)}
+.status-dot.red{background:var(--red);box-shadow:0 0 8px rgba(229,57,53,.5)}
+.result-status-text{font-size:14px;font-weight:500;color:#fff}
+
+.result-info{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:16px}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.result-row:last-child{border-bottom:none}
+.result-row .rlabel{font-size:12px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px}
+.result-row .rvalue{font-size:13px;color:rgba(255,255,255,.8);font-weight:500}
+
+.track-display{background:rgba(229,57,53,.12);border:1px solid rgba(229,57,53,.25);border-radius:var(--radius-sm);padding:20px;text-align:center}
+.track-display .track-label{font-size:11px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.track-display .track-code{font-family:'DM Sans',sans-serif;font-size:22px;font-weight:500;color:#fff;letter-spacing:2px;margin-bottom:12px}
+.copy-track-btn{padding:8px 20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:background .2s}
+.copy-track-btn:hover{background:rgba(255,255,255,.18)}
+.copy-track-btn.copied{background:rgba(76,175,80,.2);border-color:rgba(76,175,80,.3)}
+
+.no-track-msg{padding:20px;text-align:center;color:rgba(255,255,255,.4);font-size:14px;line-height:1.7}
+.cpf-error{display:none;margin-top:12px;padding:12px 14px;background:rgba(229,57,53,.12);border:1px solid rgba(229,57,53,.25);border-radius:var(--radius-sm);font-size:13px;color:#FF8A80;text-align:center}
+
+.switch-to-brand{position:fixed;bottom:24px;right:24px;font-size:12px;color:rgba(255,255,255,.2);cursor:pointer;z-index:100}
+.switch-to-brand:hover{color:rgba(255,255,255,.4)}
+.switch-to-creator{position:fixed;bottom:24px;right:24px;font-size:12px;color:var(--ink3);cursor:pointer;z-index:100}
+
+/* ── FORM FIELDS SHARED ── */
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field.span2{grid-column:1/-1}
+.section-divider{font-size:11px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);grid-column:1/-1}
+.dark-divider{font-size:11px;font-weight:500;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);grid-column:1/-1}
+
+/* inline form in brand panel */
+.form-full{max-width:700px}
+.form-full .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.brand-form-success{display:none;padding:16px 20px;background:var(--success-bg);border:1px solid #A5D6A7;border-radius:var(--radius-sm);font-size:14px;color:var(--success);margin-bottom:20px}
+
+/* toast */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;transition:transform .3s ease;z-index:9999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════
+     SCREEN 1 — BRAND LOGIN
+════════════════════════════════════════ -->
+<div class="screen active" id="screen-brand-login" style="flex-direction:column;align-items:center;justify-content:center">
+  <div class="brand-login-card">
+    <div class="logo">
+      <h1>iFood <em style="font-style:italic;color:var(--red)">Benefícios</em></h1>
+      <p>Painel de gestão de envios</p>
+    </div>
+    <label>E-mail</label>
+    <input type="email" id="login-email" placeholder="email@marca.com" onkeydown="if(event.key==='Enter')brandLogin()">
+    <label>Senha</label>
+    <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')brandLogin()">
+    <button class="login-btn" onclick="brandLogin()">Entrar no painel</button>
+    <div class="brand-login-error" id="login-error">E-mail ou senha incorretos.</div>
+  </div>
+  <div class="switch-link">
+    É creator? <a onclick="goTo('creator')">Consultar meu envio →</a>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN 2 — BRAND DASHBOARD
+════════════════════════════════════════ -->
+<div class="screen" id="screen-brand" style="flex-direction:column">
+
+  <header class="brand-header">
+    <div class="brand-header-left">
+      <div class="brand-logo">iFood <span>Benefícios</span></div>
+      <nav class="brand-nav">
+        <button class="active" onclick="brandSection('overview',this)">Visão geral</button>
+        <button onclick="brandSection('form',this)">Formulário</button>
+        <button onclick="brandSection('creators',this)">Creators</button>
+      </nav>
+    </div>
+    <div class="brand-header-right">
+      <button class="ctrl-btn" onclick="exportCSV()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Exportar CSV
+      </button>
+      <button class="logout-btn" onclick="goTo('brand-login')">Sair</button>
+    </div>
+  </header>
+
+  <div class="brand-body">
+
+    <!-- OVERVIEW -->
+    <div class="brand-section active" id="section-overview">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="num" id="s-total">0</div>
+          <div class="lbl">Total de creators</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="num" id="s-pending">0</div>
+          <div class="lbl">Aguardando envio</div>
+        </div>
+        <div class="stat-card green">
+          <div class="num" id="s-sent">0</div>
+          <div class="lbl">Enviados</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="num" id="s-nocode">0</div>
+          <div class="lbl">Nova tentativa de entrega</div>
+        </div>
+      </div>
+      <div class="section-header">
+        <h2 class="section-title">Últimas inscrições</h2>
+        <button class="ctrl-btn primary" onclick="brandSection('form',document.querySelectorAll('.brand-nav button')[1])">+ Adicionar creator</button>
+      </div>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:200px">Nome</th>
+                <th style="width:130px">Usuário IG ou Tiktok</th>
+                <th style="width:110px">Cidade</th>
+                <th style="width:170px">Status</th>
+                <th style="width:240px">Rastreio</th>
+              </tr>
+            </thead>
+            <tbody id="table-body-overview"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="brand-section" id="section-form">
+      <div class="section-header">
+        <h2 class="section-title">Cadastrar creator</h2>
+      </div>
+      <div class="form-full">
+        <div class="brand-form-success" id="brand-form-success">
+          ✓ Creator cadastrado com sucesso! Acesse a aba <strong>Creators</strong> para acompanhar.
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:28px">
+          <div class="field-grid">
+            <div class="section-divider" style="grid-column:1/-1">Dados pessoais</div>
+            <div class="field">
+              <label>Nome completo *</label>
+              <input type="text" id="f-name" placeholder="Nome completo">
+            </div>
+            <div class="field">
+              <label>CPF *</label>
+              <input type="text" id="f-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)">
+            </div>
+            <div class="field">
+              <label>Usuário IG ou Tiktok</label>
+              <input type="text" id="f-user" placeholder="seuusuario">
+            </div>
+            <div class="field">
+              <label>E-mail</label>
+              <input type="email" id="f-email" placeholder="email@exemplo.com">
+            </div>
+            <div class="field">
+              <label>Telefone</label>
+              <input type="text" id="f-phone" placeholder="(11) 99999-9999">
+            </div>
+            <div class="field">
+              <label>Data de nascimento</label>
+              <input type="date" id="f-dob">
+            </div>
+
+            <div class="section-divider">Endereço de entrega</div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Nome da rua, avenida, travessa...</label>
+              <input type="text" id="f-street" placeholder="Rua das Flores">
+            </div>
+            <div class="field">
+              <label>Número</label>
+              <input type="text" id="f-num" placeholder="123">
+            </div>
+            <div class="field">
+              <label>Complemento</label>
+              <input type="text" id="f-comp" placeholder='Apto 4 / Casa azul'>
+            </div>
+            <div class="field">
+              <label>Bairro</label>
+              <input type="text" id="f-neighborhood" placeholder="Centro">
+            </div>
+            <div class="field">
+              <label>Cidade</label>
+              <input type="text" id="f-city" placeholder="São Paulo">
+            </div>
+            <div class="field">
+              <label>CEP</label>
+              <input type="text" id="f-cep" placeholder="00000-000">
+            </div>
+            <div class="field">
+              <label>UF</label>
+              <input type="text" id="f-uf" placeholder="SP" maxlength="2" style="text-transform:uppercase">
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Ponto de referência</label>
+              <input type="text" id="f-ref" placeholder="Próximo ao mercado...">
+            </div>
+          </div>
+          <button class="submit-btn" onclick="brandAddCreator()">Cadastrar creator</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATORS TABLE -->
+    <div class="brand-section" id="section-creators">
+      <div class="section-header">
+        <h2 class="section-title">Todos os creators</h2>
+        <div class="controls">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="search" placeholder="Buscar nome ou @..." oninput="renderCreators()">
+          </div>
+          <select class="ctrl-select" id="filter" onchange="renderCreators()">
+            <option value="all">Todos</option>
+            <option value="pending">Pendentes</option>
+            <option value="sent">Enviados</option>
+            <option value="retry">Nova tentativa</option>
+            <option value="delivered">Entregues</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:200px">Nome</th>
+                <th style="width:130px">Usuário IG ou Tiktok</th>
+                <th style="width:110px">Cidade</th>
+                <th style="width:170px">Status</th>
+                <th style="width:240px">Rastreio</th>
+              </tr>
+            </thead>
+            <tbody id="table-body-creators"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN 3 — CREATOR PORTAL
+════════════════════════════════════════ -->
+<div class="screen" id="screen-creator" style="flex-direction:column">
+  <div class="creator-inner">
+    <div class="creator-logo">
+      <div class="icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <h1>iFood<br><em style="font-style:italic">Benefícios</em></h1>
+      <p>Seu produto está a caminho ✦</p>
+    </div>
+
+    <div class="creator-tabs">
+      <button class="creator-tab active" onclick="creatorTab('lookup',this)">Consultar envio</button>
+      <button class="creator-tab" onclick="creatorTab('register',this)">Cadastrar endereço</button>
+    </div>
+
+    <!-- LOOKUP TAB -->
+    <div class="creator-card active" id="tab-lookup">
+      <div class="field">
+        <label style="color:rgba(255,255,255,.45);font-size:12px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px;display:block">CPF</label>
+        <input type="text" id="cpf-lookup" placeholder="000.000.000-00" style="width:100%;padding:12px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;transition:border .2s" oninput="maskCPF(this)" onkeydown="if(event.key==='Enter')lookupCreator()">
+      </div>
+      <button class="lookup-btn" onclick="lookupCreator()">Consultar</button>
+      <div class="cpf-error" id="cpf-error">CPF não encontrado. Verifique e tente novamente.</div>
+      <div class="result-box" id="result-box">
+        <div class="result-status">
+          <div class="status-dot" id="r-dot"></div>
+          <span class="result-status-text" id="r-status-text"></span>
+        </div>
+        <div class="result-info">
+          <div class="result-row"><span class="rlabel">Nome</span><span class="rvalue" id="r-name"></span></div>
+          <div class="result-row"><span class="rlabel">Cidade</span><span class="rvalue" id="r-city"></span></div>
+        </div>
+        <div id="r-track-section">
+          <div class="track-display">
+            <div class="track-label">Código de rastreio</div>
+            <div class="track-code" id="r-track"></div>
+            <button class="copy-track-btn" id="copy-btn" onclick="copyTrack()">Copiar código</button>
+          </div>
+        </div>
+        <div class="no-track-msg" id="r-no-track" style="display:none">
+          Seu produto ainda não foi enviado.<br>Assim que sair, você será avisada aqui. 🤍
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER TAB -->
+    <div class="creator-card" id="tab-register">
+      <div id="creator-form-success" style="display:none;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">🤍</div>
+        <div style="font-size:16px;color:#fff;font-weight:500;margin-bottom:8px">Endereço cadastrado!</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.45)">Em breve seu produto será enviado. Volte aqui para acompanhar o rastreio.</div>
+        <button class="lookup-btn" style="margin-top:20px" onclick="creatorTab('lookup',document.querySelectorAll('.creator-tab')[0])">Consultar envio</button>
+      </div>
+      <div id="creator-form-fields">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="dark-divider">Seus dados</div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Nome completo *</label>
+            <input type="text" id="cf-name" placeholder="Nome" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">CPF *</label>
+            <input type="text" id="cf-cpf" placeholder="000.000.000-00" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px" oninput="maskCPF(this)">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Usuário IG ou Tiktok</label>
+            <input type="text" id="cf-user" placeholder="seuusuario" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">E-mail</label>
+            <input type="email" id="cf-email" placeholder="email@exemplo.com" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Telefone</label>
+            <input type="text" id="cf-phone" placeholder="(11) 99999-9999" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Data de nascimento</label>
+            <input type="date" id="cf-dob" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+
+          <div class="dark-divider">Endereço de entrega</div>
+          <div class="field" style="grid-column:1/-1">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Rua, avenida, travessa... *</label>
+            <input type="text" id="cf-street" placeholder="Rua das Flores" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Número *</label>
+            <input type="text" id="cf-num" placeholder="123" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Complemento</label>
+            <input type="text" id="cf-comp" placeholder='Apto 4 / Casa azul' style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Bairro *</label>
+            <input type="text" id="cf-neighborhood" placeholder="Centro" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Cidade *</label>
+            <input type="text" id="cf-city" placeholder="São Paulo" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">CEP *</label>
+            <input type="text" id="cf-cep" placeholder="00000-000" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">UF *</label>
+            <input type="text" id="cf-uf" placeholder="SP" maxlength="2" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;text-transform:uppercase">
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Ponto de referência</label>
+            <input type="text" id="cf-ref" placeholder="Próximo ao mercado" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px">
+          </div>
+        </div>
+        <button class="lookup-btn" onclick="creatorRegister()">Enviar meu endereço</button>
+      </div>
+    </div>
+  </div>
+  <div class="switch-to-brand" onclick="goTo('brand-login')">Acesso marca →</div>
+</div>
+
+<script>
+// ── DATA STORE ──
+const BRAND_CREDS={email:'marca@ifood.com',pass:'ifood2024'};
+let DB=[
+  {id:1,name:'Abidjan Santos Rosa',user:'abidjanrosa',cpf:'111.111.111-11',email:'abidjan@email.com',phone:'11987654321',dob:'1998-05-12',street:'Rua das Flores',num:'45',comp:'Casa azul',neighborhood:'Centro',city:'São Paulo',cep:'01310-100',uf:'SP',ref:'Perto do mercado',status:'delivered',track:'BR123456789BR'},
+  {id:2,name:'Ana Clara de Queiróz',user:'clarinhaqrz',cpf:'222.222.222-22',email:'anaclara@email.com',phone:'21998765432',dob:'2001-03-22',street:'Av. Brasil',num:'200',comp:'Apto 301',neighborhood:'Jardim América',city:'Rio de Janeiro',cep:'20040-020',uf:'RJ',ref:'Portaria lateral',status:'sent',track:'BR987654321BR'},
+  {id:3,name:'André Lucs Guimarães',user:'andre_lug',cpf:'333.333.333-33',email:'andre@email.com',phone:'41988765432',dob:'1995-11-08',street:'Travessa do Sol',num:'12',comp:'Casa verde',neighborhood:'Boa Vista',city:'Curitiba',cep:'80010-010',uf:'PR',ref:'Próximo à padaria',status:'pending',track:''},
+  {id:4,name:'Beatriz Gonçalves',user:'beatrizgon',cpf:'444.444.444-44',email:'bea@email.com',phone:'31977654321',dob:'2000-07-19',street:'Rua XV de Novembro',num:'88',comp:'Apto 52',neighborhood:'São Francisco',city:'Belo Horizonte',cep:'30130-110',uf:'MG',ref:'Próximo ao shopping',status:'retry',track:'BR000111222BR'},
+  {id:5,name:'Carla Mendes',user:'carlamendes',cpf:'555.555.555-55',email:'carla@email.com',phone:'11965432187',dob:'1997-09-30',street:'Rua da Paz',num:'321',comp:'Casa amarela',neighborhood:'Ipiranga',city:'São Paulo',cep:'04267-000',uf:'SP',ref:'Ao lado da farmácia',status:'pending',track:''},
+];
+let nextId=6;
+
+// ── NAVIGATION ──
+function goTo(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+}
+function brandSection(name,btn){
+  document.querySelectorAll('.brand-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.brand-nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('section-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='overview')renderOverview();
+  if(name==='creators')renderCreators();
+}
+function creatorTab(name,btn){
+  document.querySelectorAll('.creator-card').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.creator-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── AUTH ──
+function brandLogin(){
+  const e=document.getElementById('login-email').value.trim();
+  const p=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-error');
+  if(e===BRAND_CREDS.email&&p===BRAND_CREDS.pass){
+    err.style.display='none';
+    goTo('brand');
+    renderOverview();
+  }else{
+    err.style.display='block';
+    document.getElementById('login-pass').value='';
+  }
+}
+
+// ── STATUS CONFIG ──
+const STATUSES=[
+  {key:'pending',  label:'Pendente',                color:'amber'},
+  {key:'sent',     label:'Enviado',                 color:'blue'},
+  {key:'retry',    label:'Nova tentativa de entrega',color:'red'},
+  {key:'delivered',label:'Entregue',                color:'green'},
+];
+const STATUS_MAP=Object.fromEntries(STATUSES.map(s=>[s.key,s]));
+
+function badge(d){
+  const s=STATUS_MAP[d.status]||STATUS_MAP.pending;
+  const colors={amber:'background:#FFF3E0;color:#E65100',blue:'background:#E3F2FD;color:#1565C0',red:'background:#FFEBEE;color:#C62828',green:'background:#F1F8F1;color:#2E7D32'};
+  return`<span class="badge" style="${colors[s.color]||colors.amber}"><span class="dot-badge"></span>${s.label}</span>`;
+}
+
+function statusSelect(d){
+  const colors={amber:'#E65100',blue:'#1565C0',red:'#C62828',green:'#2E7D32'};
+  const cur=STATUS_MAP[d.status]||STATUS_MAP.pending;
+  const opts=STATUSES.map(s=>`<option value="${s.key}"${s.key===d.status?' selected':''}>${s.label}</option>`).join('');
+  return`<select class="status-select" style="color:${colors[cur.color]}" onchange="changeStatus(${d.id},this.value)" onclick="event.stopPropagation()">${opts}</select>`;
+}
+
+// ── TABLES ──
+function tableRow(d){
+  const hasTrack=d.track&&d.track.trim()!=='';
+  const addr=[d.street,d.num].filter(Boolean).join(', ')+(d.comp?` — ${d.comp}`:'');
+  return`<tr class="row-main" id="main-${d.id}" onclick="toggleExpand(${d.id})">
+    <td><div class="cell-name" title="${d.name}">${d.name}<span class="expand-chevron">▾</span></div></td>
+    <td><div class="cell-user">@${d.user||'—'}</div></td>
+    <td><div class="cell-city">${d.city}${d.uf?' — '+d.uf:''}</div></td>
+    <td onclick="event.stopPropagation()">${statusSelect(d)}</td>
+    <td onclick="event.stopPropagation()">
+      <div class="track-inline">
+        <input class="track-input${hasTrack?' has-value':''}" id="ti-${d.id}" value="${d.track}" placeholder="Inserir código..." onkeydown="if(event.key==='Enter')saveTrack(${d.id})" oninput="this.classList.toggle('has-value',this.value.trim()!=='')">
+        <button class="ok-btn" onclick="saveTrack(${d.id})" title="Salvar">✓</button>
+      </div>
+    </td>
+  </tr>
+  <tr class="row-expand" id="expand-${d.id}">
+    <td colspan="5">
+      <div class="expand-inner">
+        <div class="expand-title">Endereço de entrega</div>
+        <div class="expand-grid">
+          <div class="expand-field" style="grid-column:1/-1"><span class="ef-label">Logradouro</span><span class="ef-value">${addr||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">Bairro</span><span class="ef-value">${d.neighborhood||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">Cidade</span><span class="ef-value">${d.city||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">CEP</span><span class="ef-value">${d.cep||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">UF</span><span class="ef-value">${d.uf||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">Ponto de referência</span><span class="ef-value">${d.ref||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">CPF</span><span class="ef-value">${d.cpf||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">Telefone</span><span class="ef-value">${d.phone||'—'}</span></div>
+          <div class="expand-field"><span class="ef-label">E-mail</span><span class="ef-value">${d.email||'—'}</span></div>
+        </div>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function changeStatus(id,val){
+  const item=DB.find(d=>d.id===id);
+  if(item){item.status=val;}
+  updateStats();
+  // re-color the select immediately
+  const colors={amber:'#E65100',blue:'#1565C0',red:'#C62828',green:'#2E7D32'};
+  const sel=event.target;
+  sel.style.color=colors[STATUS_MAP[val].color];
+}
+
+function toggleExpand(id){
+  const main=document.getElementById('main-'+id);
+  const exp=document.getElementById('expand-'+id);
+  const isOpen=exp.classList.contains('open');
+  document.querySelectorAll('.row-expand').forEach(r=>r.classList.remove('open'));
+  document.querySelectorAll('.row-main').forEach(r=>r.classList.remove('expanded'));
+  if(!isOpen){exp.classList.add('open');main.classList.add('expanded');}
+}
+
+function renderOverview(){
+  updateStats();
+  document.getElementById('table-body-overview').innerHTML=DB.map(tableRow).join('')||`<tr><td colspan="5" class="empty-row">Nenhum creator cadastrado ainda.</td></tr>`;
+}
+function renderCreators(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const f=document.getElementById('filter').value;
+  const rows=DB.filter(d=>{
+    const mq=!q||d.name.toLowerCase().includes(q)||(d.user||'').toLowerCase().includes(q);
+    const mf=f==='all'||d.status===f;
+    return mq&&mf;
+  });
+  document.getElementById('table-body-creators').innerHTML=rows.length?rows.map(tableRow).join(''):`<tr><td colspan="5" class="empty-row">Nenhum resultado encontrado.</td></tr>`;
+  updateStats();
+}
+function updateStats(){
+  document.getElementById('s-total').textContent=DB.length;
+  document.getElementById('s-pending').textContent=DB.filter(d=>(!d.status||d.status==='pending')).length;
+  document.getElementById('s-sent').textContent=DB.filter(d=>d.status==='delivered').length;
+  document.getElementById('s-nocode').textContent=DB.filter(d=>d.status==='retry').length;
+}
+
+function saveTrack(id){
+  const inp=document.getElementById('ti-'+id);
+  const val=inp.value.trim();
+  const item=DB.find(d=>d.id===id);
+  if(item){item.track=val;if(val&&item.status==='pending')item.status='sent';}
+  toast('Rastreio salvo ✓');
+  renderOverview();
+}
+
+// ── BRAND ADD CREATOR ──
+function brandAddCreator(){
+  const n=v('f-name'),cpf=v('f-cpf');
+  if(!n||!cpf){toast('Nome e CPF são obrigatórios');return;}
+  DB.push({
+    id:nextId++,name:n,user:v('f-user'),cpf:cpf,email:v('f-email'),
+    phone:v('f-phone'),dob:v('f-dob'),street:v('f-street'),num:v('f-num'),
+    comp:v('f-comp'),neighborhood:v('f-neighborhood'),city:v('f-city'),
+    cep:v('f-cep'),uf:v('f-uf').toUpperCase(),ref:v('f-ref'),status:'pending',track:''
+  });
+  ['f-name','f-cpf','f-user','f-email','f-phone','f-dob','f-street','f-num','f-comp','f-neighborhood','f-city','f-cep','f-uf','f-ref'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('brand-form-success').style.display='block';
+  setTimeout(()=>document.getElementById('brand-form-success').style.display='none',4000);
+  toast('Creator cadastrado ✓');
+}
+
+// ── CREATOR REGISTER ──
+function creatorRegister(){
+  const n=v('cf-name'),cpf=v('cf-cpf'),street=v('cf-street'),num=v('cf-num'),city=v('cf-city'),uf=v('cf-uf');
+  if(!n||!cpf||!street||!num||!city||!uf){toast('Preencha os campos obrigatórios');return;}
+  const existing=DB.find(d=>d.cpf===cpf);
+  if(existing){toast('CPF já cadastrado. Consulte seu envio!');return;}
+  DB.push({
+    id:nextId++,name:n,user:v('cf-user'),cpf:cpf,email:v('cf-email'),
+    phone:v('cf-phone'),dob:v('cf-dob'),street:street,num:num,
+    comp:v('cf-comp'),neighborhood:v('cf-neighborhood'),city:city,
+    cep:v('cf-cep'),uf:uf.toUpperCase(),ref:v('cf-ref'),status:'pending',track:''
+  });
+  document.getElementById('creator-form-fields').style.display='none';
+  document.getElementById('creator-form-success').style.display='block';
+}
+
+// ── LOOKUP ──
+function lookupCreator(){
+  const cpf=document.getElementById('cpf-lookup').value.trim();
+  const err=document.getElementById('cpf-error');
+  const result=document.getElementById('result-box');
+  err.style.display='none';result.style.display='none';
+  const item=DB.find(d=>d.cpf===cpf);
+  if(!item){err.style.display='block';return;}
+  const statusLabels={pending:{dot:'red',text:'Aguardando envio'},sent:{dot:'amber',text:'Enviado — rastreio disponível'},retry:{dot:'amber',text:'Nova tentativa de entrega sendo feita'},delivered:{dot:'green',text:'Entregue!'}};
+  const sl=statusLabels[item.status]||statusLabels.pending;
+  const dot=document.getElementById('r-dot');
+  const stxt=document.getElementById('r-status-text');
+  dot.className='status-dot '+sl.dot;
+  stxt.textContent=sl.text;
+  document.getElementById('r-name').textContent=item.name;
+  document.getElementById('r-city').textContent=`${item.city} — ${item.uf}`;
+  if(item.track){
+    document.getElementById('r-track-section').style.display='block';
+    document.getElementById('r-no-track').style.display='none';
+    document.getElementById('r-track').textContent=item.track;
+  }else{
+    document.getElementById('r-track-section').style.display='none';
+    document.getElementById('r-no-track').style.display='block';
+  }
+  result.style.display='block';
+}
+
+function copyTrack(){
+  const t=document.getElementById('r-track').textContent;
+  navigator.clipboard.writeText(t).catch(()=>{});
+  const btn=document.getElementById('copy-btn');
+  btn.textContent='Copiado!';btn.classList.add('copied');
+  setTimeout(()=>{btn.textContent='Copiar código';btn.classList.remove('copied');},2000);
+}
+
+// ── EXPORT ──
+function exportCSV(){
+  const statusPT={pending:'Pendente',sent:'Enviado',retry:'Nova tentativa de entrega',delivered:'Entregue'};
+  const h=['Nome','Usuário IG ou Tiktok','CPF','E-mail','Telefone','Nascimento','Rua','Número','Complemento','Bairro','Cidade','CEP','UF','Referência','Status','Rastreio'];
+  const rows=DB.map(d=>[d.name,d.user,d.cpf,d.email,d.phone,d.dob,d.street,d.num,d.comp,d.neighborhood,d.city,d.cep,d.uf,d.ref,statusPT[d.status]||'Pendente',d.track].map(val=>`"${String(val||'').replace(/"/g,'""')}"`).join(','));
+  const csv=[h.join(','),...rows].join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ifood_beneficios_creators.csv';a.click();
+  toast('CSV exportado ✓');
+}
+
+// ── UTILS ──
+function v(id){return document.getElementById(id)?.value?.trim()||'';}
+function maskCPF(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+  else if(v.length>3)v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+  el.value=v;
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// start on creator portal
+goTo('creator');
+</script>
+</body>
+</html>
