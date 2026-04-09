@@ -625,30 +625,31 @@ function badge(d){
   return`<span class="badge" style="${colors[s.color]||colors.amber}"><span class="dot-badge"></span>${s.label}</span>`;
 }
 
-function statusSelect(d){
+function statusSelect(d,eid){
   const colors={amber:'#E65100',blue:'#1565C0',red:'#C62828',green:'#2E7D32'};
   const cur=STATUS_MAP[d.status]||STATUS_MAP.pending;
   const opts=STATUSES.map(s=>`<option value="${s.key}"${s.key===d.status?' selected':''}>${s.label}</option>`).join('');
-  return`<select class="status-select" style="color:${colors[cur.color]}" onchange="changeStatus(${d.id},this.value)" onclick="event.stopPropagation()">${opts}</select>`;
+  return`<select class="status-select" style="color:${colors[cur.color]}" onchange="changeStatus('${eid}',this.value)" onclick="event.stopPropagation()">${opts}</select>`;
 }
 
 // ── TABLES ──
 function tableRow(d){
   const hasTrack=d.track&&d.track.trim()!=='';
   const addr=[d.street,d.num].filter(Boolean).join(', ')+(d.comp?` — ${d.comp}`:'');
-  return`<tr class="row-main" id="main-${d.id}" onclick="toggleExpand(${d.id})">
+  const eid=d.id.toString().replace(/-/g,'_');
+  return`<tr class="row-main" id="main-${eid}" onclick="toggleExpand('${eid}')">
     <td><div class="cell-name" title="${d.name}">${d.name}<span class="expand-chevron">▾</span></div></td>
-    <td><div class="cell-user">@${d.user||'—'}</div></td>
-    <td><div class="cell-city">${d.city}${d.uf?' — '+d.uf:''}</div></td>
-    <td onclick="event.stopPropagation()">${statusSelect(d)}</td>
+    <td><div class="cell-user">${d.user||'—'}</div></td>
+    <td><div class="cell-city">${d.city||'—'}${d.uf?' — '+d.uf:''}</div></td>
+    <td onclick="event.stopPropagation()">${statusSelect(d,eid)}</td>
     <td onclick="event.stopPropagation()">
       <div class="track-inline">
-        <input class="track-input${hasTrack?' has-value':''}" id="ti-${d.id}" value="${d.track}" placeholder="Inserir código..." onkeydown="if(event.key==='Enter')saveTrack(${d.id})" oninput="this.classList.toggle('has-value',this.value.trim()!=='')">
-        <button class="ok-btn" onclick="saveTrack(${d.id})" title="Salvar">✓</button>
+        <input class="track-input${hasTrack?' has-value':''}" id="ti-${eid}" value="${d.track||''}" placeholder="Inserir código..." onkeydown="if(event.key==='Enter')saveTrack('${eid}')" oninput="this.classList.toggle('has-value',this.value.trim()!=='')">
+        <button class="ok-btn" onclick="saveTrack('${eid}')" title="Salvar">✓</button>
       </div>
     </td>
   </tr>
-  <tr class="row-expand" id="expand-${d.id}">
+  <tr class="row-expand" id="expand-${eid}">
     <td colspan="5">
       <div class="expand-inner">
         <div class="expand-title">Endereço de entrega</div>
@@ -668,21 +669,23 @@ function tableRow(d){
   </tr>`;
 }
 
-async function changeStatus(id,val){
-  const item=DB.find(d=>d.id===id);
+async function changeStatus(eid,val){
+  const realId=eid.replace(/_/g,'-');
+  const item=DB.find(d=>d.id===realId);
   if(item){item.status=val;}
   updateStats();
   const colors={amber:'#E65100',blue:'#1565C0',red:'#C62828',green:'#2E7D32'};
   const sel=event.target;
   sel.style.color=colors[STATUS_MAP[val].color];
   try{
-    await supa('creators?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:val})});
+    await supa('creators?id=eq.'+realId,{method:'PATCH',body:JSON.stringify({status:val})});
+    toast('Status atualizado ✓');
   }catch(e){toast('Erro ao salvar status');}
 }
 
-function toggleExpand(id){
-  const main=document.getElementById('main-'+id);
-  const exp=document.getElementById('expand-'+id);
+function toggleExpand(eid){
+  const main=document.getElementById('main-'+eid);
+  const exp=document.getElementById('expand-'+eid);
   const isOpen=exp.classList.contains('open');
   document.querySelectorAll('.row-expand').forEach(r=>r.classList.remove('open'));
   document.querySelectorAll('.row-main').forEach(r=>r.classList.remove('expanded'));
@@ -711,15 +714,16 @@ function updateStats(){
   document.getElementById('s-nocode').textContent=DB.filter(d=>d.status==='retry').length;
 }
 
-async function saveTrack(id){
-  const inp=document.getElementById('ti-'+id);
+async function saveTrack(eid){
+  const realId=eid.replace(/_/g,'-');
+  const inp=document.getElementById('ti-'+eid);
   const val=inp.value.trim();
-  const item=DB.find(d=>d.id===id);
+  const item=DB.find(d=>d.id===realId);
   if(!item)return;
   item.track=val;
   if(val&&item.status==='pending')item.status='sent';
   try{
-    await supa('creators?id=eq.'+item.id,{method:'PATCH',body:JSON.stringify({track:val,status:item.status})});
+    await supa('creators?id=eq.'+realId,{method:'PATCH',body:JSON.stringify({track:val,status:item.status})});
     toast('Rastreio salvo ✓');
   }catch(e){toast('Erro ao salvar');}
   renderOverview();
