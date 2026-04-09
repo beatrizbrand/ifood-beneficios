@@ -543,29 +543,43 @@ tr:hover td{background:#FAFAF9}
 </div>
 
 <script>
+// ── SUPABASE ──
+const SUPA_URL='https://bbzaivioxwcieytuuujl.supabase.co';
+const SUPA_KEY='sb_publishable_kApNGBlPsaR61SG63Eo0ag_jCMDpQdt';
+async function supa(path,opts={}){
+  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  const txt=await res.text();
+  return txt?JSON.parse(txt):[];
+}
+
 // ── DATA STORE ──
-const BRAND_CREDS={email:'marca@ifood.com',pass:'ifood2024'};
-let DB=[
-  {id:1,name:'Abidjan Santos Rosa',user:'abidjanrosa',cpf:'111.111.111-11',email:'abidjan@email.com',phone:'11987654321',dob:'1998-05-12',street:'Rua das Flores',num:'45',comp:'Casa azul',neighborhood:'Centro',city:'São Paulo',cep:'01310-100',uf:'SP',ref:'Perto do mercado',status:'delivered',track:'BR123456789BR'},
-  {id:2,name:'Ana Clara de Queiróz',user:'clarinhaqrz',cpf:'222.222.222-22',email:'anaclara@email.com',phone:'21998765432',dob:'2001-03-22',street:'Av. Brasil',num:'200',comp:'Apto 301',neighborhood:'Jardim América',city:'Rio de Janeiro',cep:'20040-020',uf:'RJ',ref:'Portaria lateral',status:'sent',track:'BR987654321BR'},
-  {id:3,name:'André Lucs Guimarães',user:'andre_lug',cpf:'333.333.333-33',email:'andre@email.com',phone:'41988765432',dob:'1995-11-08',street:'Travessa do Sol',num:'12',comp:'Casa verde',neighborhood:'Boa Vista',city:'Curitiba',cep:'80010-010',uf:'PR',ref:'Próximo à padaria',status:'pending',track:''},
-  {id:4,name:'Beatriz Gonçalves',user:'beatrizgon',cpf:'444.444.444-44',email:'bea@email.com',phone:'31977654321',dob:'2000-07-19',street:'Rua XV de Novembro',num:'88',comp:'Apto 52',neighborhood:'São Francisco',city:'Belo Horizonte',cep:'30130-110',uf:'MG',ref:'Próximo ao shopping',status:'retry',track:'BR000111222BR'},
-  {id:5,name:'Carla Mendes',user:'carlamendes',cpf:'555.555.555-55',email:'carla@email.com',phone:'11965432187',dob:'1997-09-30',street:'Rua da Paz',num:'321',comp:'Casa amarela',neighborhood:'Ipiranga',city:'São Paulo',cep:'04267-000',uf:'SP',ref:'Ao lado da farmácia',status:'pending',track:''},
-];
-let nextId=6;
+let DB=[];
+let loggedInEmail='';
+
+// ── LOAD FROM SUPABASE ──
+async function loadCreators(){
+  try{
+    const rows=await supa('creators?order=created_at.desc');
+    DB=rows.map(r=>({...r,user:r.username||''}));
+  }catch(e){DB=[];}
+}
 
 // ── NAVIGATION ──
 function goTo(screen){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+screen).classList.add('active');
 }
-function brandSection(name,btn){
+async function brandSection(name,btn){
   document.querySelectorAll('.brand-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.brand-nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('section-'+name).classList.add('active');
   btn.classList.add('active');
-  if(name==='overview')renderOverview();
-  if(name==='creators')renderCreators();
+  if(name==='overview'){await loadCreators();renderOverview();}
+  if(name==='creators'){await loadCreators();renderCreators();}
 }
 function creatorTab(name,btn){
   document.querySelectorAll('.creator-card').forEach(c=>c.classList.remove('active'));
@@ -575,17 +589,24 @@ function creatorTab(name,btn){
 }
 
 // ── AUTH ──
-function brandLogin(){
+async function brandLogin(){
   const e=document.getElementById('login-email').value.trim();
-  const p=document.getElementById('login-pass').value;
+  const p=document.getElementById('login-pass').value.trim();
   const err=document.getElementById('login-error');
-  if(e===BRAND_CREDS.email&&p===BRAND_CREDS.pass){
-    err.style.display='none';
-    goTo('brand');
-    renderOverview();
-  }else{
+  err.style.display='none';
+  try{
+    const rows=await supa('brand_users?email=eq.'+encodeURIComponent(e)+'&select=email,password');
+    if(rows.length>0&&rows[0].password===p){
+      loggedInEmail=e;
+      goTo('brand');
+      await loadCreators();
+      renderOverview();
+    }else{
+      err.style.display='block';
+      document.getElementById('login-pass').value='';
+    }
+  }catch(ex){
     err.style.display='block';
-    document.getElementById('login-pass').value='';
   }
 }
 
@@ -647,14 +668,16 @@ function tableRow(d){
   </tr>`;
 }
 
-function changeStatus(id,val){
+async function changeStatus(id,val){
   const item=DB.find(d=>d.id===id);
   if(item){item.status=val;}
   updateStats();
-  // re-color the select immediately
   const colors={amber:'#E65100',blue:'#1565C0',red:'#C62828',green:'#2E7D32'};
   const sel=event.target;
   sel.style.color=colors[STATUS_MAP[val].color];
+  try{
+    await supa('creators?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:val})});
+  }catch(e){toast('Erro ao salvar status');}
 }
 
 function toggleExpand(id){
@@ -688,54 +711,68 @@ function updateStats(){
   document.getElementById('s-nocode').textContent=DB.filter(d=>d.status==='retry').length;
 }
 
-function saveTrack(id){
+async function saveTrack(id){
   const inp=document.getElementById('ti-'+id);
   const val=inp.value.trim();
   const item=DB.find(d=>d.id===id);
-  if(item){item.track=val;if(val&&item.status==='pending')item.status='sent';}
-  toast('Rastreio salvo ✓');
+  if(!item)return;
+  item.track=val;
+  if(val&&item.status==='pending')item.status='sent';
+  try{
+    await supa('creators?id=eq.'+item.id,{method:'PATCH',body:JSON.stringify({track:val,status:item.status})});
+    toast('Rastreio salvo ✓');
+  }catch(e){toast('Erro ao salvar');}
   renderOverview();
 }
 
 // ── BRAND ADD CREATOR ──
-function brandAddCreator(){
+async function brandAddCreator(){
   const n=v('f-name'),cpf=v('f-cpf');
   if(!n||!cpf){toast('Nome e CPF são obrigatórios');return;}
-  DB.push({
-    id:nextId++,name:n,user:v('f-user'),cpf:cpf,email:v('f-email'),
-    phone:v('f-phone'),dob:v('f-dob'),street:v('f-street'),num:v('f-num'),
+  const rec={name:n,username:v('f-user'),cpf:cpf,email:v('f-email'),
+    phone:v('f-phone'),dob:v('f-dob')||null,street:v('f-street'),num:v('f-num'),
     comp:v('f-comp'),neighborhood:v('f-neighborhood'),city:v('f-city'),
-    cep:v('f-cep'),uf:v('f-uf').toUpperCase(),ref:v('f-ref'),status:'pending',track:''
-  });
-  ['f-name','f-cpf','f-user','f-email','f-phone','f-dob','f-street','f-num','f-comp','f-neighborhood','f-city','f-cep','f-uf','f-ref'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('brand-form-success').style.display='block';
-  setTimeout(()=>document.getElementById('brand-form-success').style.display='none',4000);
-  toast('Creator cadastrado ✓');
+    cep:v('f-cep'),uf:v('f-uf').toUpperCase(),ref:v('f-ref'),status:'pending',track:''};
+  try{
+    const rows=await supa('creators',{method:'POST',body:JSON.stringify(rec)});
+    const saved=rows[0];
+    DB.push({...rec,id:saved.id,user:rec.username});
+    ['f-name','f-cpf','f-user','f-email','f-phone','f-dob','f-street','f-num','f-comp','f-neighborhood','f-city','f-cep','f-uf','f-ref'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('brand-form-success').style.display='block';
+    setTimeout(()=>document.getElementById('brand-form-success').style.display='none',4000);
+    toast('Creator cadastrado ✓');
+    renderOverview();
+  }catch(e){toast('Erro: CPF já cadastrado ou dados inválidos');}
 }
 
 // ── CREATOR REGISTER ──
-function creatorRegister(){
+async function creatorRegister(){
   const n=v('cf-name'),cpf=v('cf-cpf'),street=v('cf-street'),num=v('cf-num'),city=v('cf-city'),uf=v('cf-uf');
   if(!n||!cpf||!street||!num||!city||!uf){toast('Preencha os campos obrigatórios');return;}
-  const existing=DB.find(d=>d.cpf===cpf);
-  if(existing){toast('CPF já cadastrado. Consulte seu envio!');return;}
-  DB.push({
-    id:nextId++,name:n,user:v('cf-user'),cpf:cpf,email:v('cf-email'),
-    phone:v('cf-phone'),dob:v('cf-dob'),street:street,num:num,
+  const rec={name:n,username:v('cf-user'),cpf:cpf,email:v('cf-email'),
+    phone:v('cf-phone'),dob:v('cf-dob')||null,street:street,num:num,
     comp:v('cf-comp'),neighborhood:v('cf-neighborhood'),city:city,
-    cep:v('cf-cep'),uf:uf.toUpperCase(),ref:v('cf-ref'),status:'pending',track:''
-  });
-  document.getElementById('creator-form-fields').style.display='none';
-  document.getElementById('creator-form-success').style.display='block';
+    cep:v('cf-cep'),uf:uf.toUpperCase(),ref:v('cf-ref'),status:'pending',track:''};
+  try{
+    await supa('creators',{method:'POST',body:JSON.stringify(rec)});
+    document.getElementById('creator-form-fields').style.display='none';
+    document.getElementById('creator-form-success').style.display='block';
+  }catch(e){
+    toast('CPF já cadastrado. Consulte seu envio!');
+  }
 }
 
 // ── LOOKUP ──
-function lookupCreator(){
+async function lookupCreator(){
   const cpf=document.getElementById('cpf-lookup').value.trim();
   const err=document.getElementById('cpf-error');
   const result=document.getElementById('result-box');
   err.style.display='none';result.style.display='none';
-  const item=DB.find(d=>d.cpf===cpf);
+  let item=null;
+  try{
+    const rows=await supa('creators?cpf=eq.'+encodeURIComponent(cpf));
+    if(rows.length>0){item={...rows[0],user:rows[0].username};}
+  }catch(e){}
   if(!item){err.style.display='block';return;}
   const statusLabels={pending:{dot:'red',text:'Aguardando envio'},sent:{dot:'amber',text:'Enviado — rastreio disponível'},retry:{dot:'amber',text:'Nova tentativa de entrega sendo feita'},delivered:{dot:'green',text:'Entregue!'}};
   const sl=statusLabels[item.status]||statusLabels.pending;
