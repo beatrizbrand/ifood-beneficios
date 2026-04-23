@@ -107,6 +107,25 @@ tr:hover td{background:#FAFAF9}
 .sent-check{width:16px;height:16px;cursor:pointer;accent-color:var(--red)}
 .status-select{padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--white);cursor:pointer;width:100%;max-width:200px}
 .empty-row{text-align:center;padding:40px;color:var(--ink3)}
+.action-btns{display:flex;gap:6px;align-items:center}
+.action-btn{width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.action-btn.edit:hover{background:#E3F2FD;border-color:#1565C0;color:#1565C0}
+.action-btn.del:hover{background:#FFEBEE;border-color:var(--red);color:var(--red)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--radius-lg);padding:32px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-lg)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-header h3{font-family:'Fraunces',serif;font-size:20px;font-weight:400}
+.modal-close{width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--ink2);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+.modal-save{padding:10px 24px;background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer}
+.modal-save:hover{background:var(--red2)}
+.modal-cancel{padding:10px 20px;background:none;color:var(--ink2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer}
+.modal-cancel:hover{border-color:var(--red);color:var(--red)}
+.modal .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
 /* expandable address row */
 .row-main td{cursor:pointer}
@@ -214,6 +233,39 @@ tr:hover td{background:#FAFAF9}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Editar creator</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <input type="hidden" id="m-id">
+    <div class="modal-field-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="section-divider" style="grid-column:1/-1">Dados pessoais</div>
+      <div class="field"><label>Nome completo *</label><input type="text" id="m-name"></div>
+      <div class="field"><label>CPF</label><input type="text" id="m-cpf" oninput="maskCPF(this)"></div>
+      <div class="field"><label>Usuário IG ou Tiktok</label><input type="text" id="m-user"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="m-email"></div>
+      <div class="field"><label>Telefone</label><input type="text" id="m-phone"></div>
+      <div class="field"><label>Data de nascimento</label><input type="date" id="m-dob"></div>
+      <div class="section-divider" style="grid-column:1/-1">Endereço de entrega</div>
+      <div class="field" style="grid-column:1/-1"><label>Rua, avenida...</label><input type="text" id="m-street"></div>
+      <div class="field"><label>Número</label><input type="text" id="m-num"></div>
+      <div class="field"><label>Complemento</label><input type="text" id="m-comp"></div>
+      <div class="field"><label>Bairro</label><input type="text" id="m-neighborhood"></div>
+      <div class="field"><label>Cidade</label><input type="text" id="m-city"></div>
+      <div class="field"><label>CEP</label><input type="text" id="m-cep"></div>
+      <div class="field"><label>UF</label><input type="text" id="m-uf" maxlength="2" style="text-transform:uppercase"></div>
+      <div class="field" style="grid-column:1/-1"><label>Ponto de referência</label><input type="text" id="m-ref"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-save" onclick="saveEdit()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════════════════════════
      SCREEN 1 — BRAND LOGIN
 ════════════════════════════════════════ -->
@@ -294,6 +346,7 @@ tr:hover td{background:#FAFAF9}
                 <th style="width:110px">Cidade</th>
                 <th style="width:170px">Status</th>
                 <th style="width:240px">Rastreio</th>
+                <th style="width:80px">Ações</th>
               </tr>
             </thead>
             <tbody id="table-body-overview"></tbody>
@@ -406,6 +459,7 @@ tr:hover td{background:#FAFAF9}
                 <th style="width:110px">Cidade</th>
                 <th style="width:170px">Status</th>
                 <th style="width:240px">Rastreio</th>
+                <th style="width:80px">Ações</th>
               </tr>
             </thead>
             <tbody id="table-body-creators"></tbody>
@@ -648,9 +702,19 @@ function tableRow(d){
         <button class="ok-btn" onclick="saveTrack('${eid}')" title="Salvar">✓</button>
       </div>
     </td>
+    <td onclick="event.stopPropagation()">
+      <div class="action-btns">
+        <button class="action-btn edit" onclick="editCreator('${eid}')" title="Editar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="action-btn del" onclick="deleteCreator('${eid}')" title="Apagar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        </button>
+      </div>
+    </td>
   </tr>
   <tr class="row-expand" id="expand-${eid}">
-    <td colspan="5">
+    <td colspan="6">
       <div class="expand-inner">
         <div class="expand-title">Endereço de entrega</div>
         <div class="expand-grid">
@@ -803,6 +867,75 @@ function copyTrack(){
   const btn=document.getElementById('copy-btn');
   btn.textContent='Copiado!';btn.classList.add('copied');
   setTimeout(()=>{btn.textContent='Copiar código';btn.classList.remove('copied');},2000);
+}
+
+// ── EDIT / DELETE ──
+function editCreator(eid){
+  const realId=eid.replace(/_/g,'-');
+  const d=DB.find(d=>d.id===realId);
+  if(!d)return;
+  document.getElementById('m-id').value=realId;
+  document.getElementById('m-name').value=d.name||'';
+  document.getElementById('m-cpf').value=d.cpf||'';
+  document.getElementById('m-user').value=d.user||'';
+  document.getElementById('m-email').value=d.email||'';
+  document.getElementById('m-phone').value=d.phone||'';
+  document.getElementById('m-dob').value=d.dob||'';
+  document.getElementById('m-street').value=d.street||'';
+  document.getElementById('m-num').value=d.num||'';
+  document.getElementById('m-comp').value=d.comp||'';
+  document.getElementById('m-neighborhood').value=d.neighborhood||'';
+  document.getElementById('m-city').value=d.city||'';
+  document.getElementById('m-cep').value=d.cep||'';
+  document.getElementById('m-uf').value=d.uf||'';
+  document.getElementById('m-ref').value=d.ref||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('edit-modal').classList.remove('open');
+}
+document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+async function saveEdit(){
+  const realId=document.getElementById('m-id').value;
+  const n=document.getElementById('m-name').value.trim();
+  if(!n){toast('Nome é obrigatório');return;}
+  const updates={
+    name:n,username:document.getElementById('m-user').value.trim(),
+    cpf:document.getElementById('m-cpf').value.trim(),
+    email:document.getElementById('m-email').value.trim(),
+    phone:document.getElementById('m-phone').value.trim(),
+    dob:document.getElementById('m-dob').value||null,
+    street:document.getElementById('m-street').value.trim(),
+    num:document.getElementById('m-num').value.trim(),
+    comp:document.getElementById('m-comp').value.trim(),
+    neighborhood:document.getElementById('m-neighborhood').value.trim(),
+    city:document.getElementById('m-city').value.trim(),
+    cep:document.getElementById('m-cep').value.trim(),
+    uf:document.getElementById('m-uf').value.trim().toUpperCase(),
+    ref:document.getElementById('m-ref').value.trim()
+  };
+  try{
+    await supa('creators?id=eq.'+realId,{method:'PATCH',body:JSON.stringify(updates)});
+    const idx=DB.findIndex(d=>d.id===realId);
+    if(idx>=0)DB[idx]={...DB[idx],...updates,user:updates.username};
+    closeModal();
+    toast('Creator atualizado ✓');
+    renderOverview();
+    if(document.getElementById('section-creators').classList.contains('active'))renderCreators();
+  }catch(e){toast('Erro ao salvar alterações');}
+}
+async function deleteCreator(eid){
+  const realId=eid.replace(/_/g,'-');
+  const d=DB.find(d=>d.id===realId);
+  if(!d)return;
+  if(!confirm(`Apagar "${d.name}" permanentemente?`))return;
+  try{
+    await supa('creators?id=eq.'+realId,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    DB=DB.filter(d=>d.id!==realId);
+    toast('Creator apagado ✓');
+    renderOverview();
+    if(document.getElementById('section-creators').classList.contains('active'))renderCreators();
+  }catch(e){toast('Erro ao apagar creator');}
 }
 
 // ── EXPORT ──
